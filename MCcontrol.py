@@ -17,7 +17,7 @@ max_epislon = 1
 min_epislon = 0.001
 decay_rate = 0.0001
 constant_epislon = 0.1
-episodes_number = 20000
+episodes_number = 30000
 rewards_per_episode = np.zeros(episodes_number)
 
 for episodes in range(episodes_number):
@@ -33,8 +33,10 @@ for episodes in range(episodes_number):
     # this is where you would insert your policy
         rand = np.random.rand()
         actions = np.array([0, 1, 2, 3])
-        # epislon = constant_epislon
+        epislon = constant_epislon
         epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
+        # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
+
         if rand < 1 - epislon:
             action = pi[state]
         else:
@@ -70,18 +72,18 @@ plt.savefig('frozen_lake8x8.png')
 print('over')
 print(pi)
 
-env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode="human")
-observation, info = env.reset(seed=35)
-while True:
-    state = 0
-    terminated = False
-    truncated = False
-    while (not terminated and not truncated):
-        action = pi[state]
-        new_state, reward, terminated, truncated, info = env.step(action)
-        state = new_state
-    if terminated or truncated:
-        observation, info = env.reset()
+# env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode="human")
+# observation, info = env.reset(seed=35)
+# while True:
+#     state = 0
+#     terminated = False
+#     truncated = False
+#     while (not terminated and not truncated):
+#         action = pi[state]
+#         new_state, reward, terminated, truncated, info = env.step(action)
+#         state = new_state
+#     if terminated or truncated:
+#         observation, info = env.reset()
 
 
 env.close()

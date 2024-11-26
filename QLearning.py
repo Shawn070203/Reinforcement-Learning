@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 # Initialise the environment
-env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode=None)
+env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = True, render_mode=None)
 
 # Reset the environment to generate the first observation
 # observation, info = env.reset(seed=46)
@@ -14,12 +14,12 @@ gamma = 0.9
 
 max_epislon = 1
 min_epislon = 0.001
-decay_rate = 0.001
+decay_rate = 0.0001
 
 constant_epislon = 0.1
 
 
-episodes_number = 20000
+episodes_number = 30000
 rewards_per_episode = np.zeros(episodes_number)
 
 for episodes in range(episodes_number):
@@ -30,6 +30,7 @@ for episodes in range(episodes_number):
         rand = np.random.rand()
         actions = np.array([0, 1, 2, 3])
         # epislon = constant_epislon
+        # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
         epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
         if rand < 1 - epislon:
             action = np.argmax(q[state,:])
