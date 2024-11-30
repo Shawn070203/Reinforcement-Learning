@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+# 选参
 # Initialise the environment
 env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode=None)
 
@@ -64,6 +64,10 @@ for episodes in range(episodes_number):
     # If the episode has ended then we can reset to start a new episode
 
 
+
+
+
+# 结果体现
 sum_rewards = np.zeros(episodes_number)
 for t in range(episodes_number):
     sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
