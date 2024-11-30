@@ -51,6 +51,11 @@ def MC(gamma_in, decay_rate_in, seed, env):
                 q[state_episode, action_episode] += 1/action_num[state_episode, action_episode]*(G - q[state_episode, action_episode])
                 pi[state_episode] = np.argmax(np.array(q[state_episode]))
 
+    sum_rewards = np.zeros(episodes_number)
+    for t in range(episodes_number):
+        sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
+    return sum_rewards
+
 def QLearning(alpha_in, gamma_in, decay_rate_in, seed, env):
     q = np.zeros([env.observation_space.n, env.action_space.n])
     alpha = alpha_in
@@ -80,9 +85,14 @@ def QLearning(alpha_in, gamma_in, decay_rate_in, seed, env):
             state = new_state
         rewards_per_episode[episodes] = reward
 
+    sum_rewards = np.zeros(episodes_number)
+    for t in range(episodes_number):
+        sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
+    return sum_rewards
+
 def chunk(lst, n):
     for i in range(0, len(lst), n):
-        yield lst[i, i+n]
+        yield lst[i:i+n]
 
 @contextlib.contextmanager
 def local_seed(seed):
@@ -128,7 +138,7 @@ def main():
     }
 
     param_keys = list(param_grid_md.keys())
-    search_space = list(generate_search_space(param_grid_md).items)
+    search_space = list(generate_search_space(param_grid_md).items())
 
     print(f"I'm conducting {method} method. Search space is ")
     print("="*20)
@@ -139,10 +149,15 @@ def main():
     search_space_chunks = list(chunk(search_space, 1))
 
     for ss_chunk in search_space_chunks:
+        print(f"ss_chunk: {ss_chunk}"+"="*20)
+        results = np.zeros(15000)  # episodes number
         for seed in seeds:
-            print(f"ss_chunk: {ss_chunk}")
             print(f"seed is {seed}")
-            hypothetical_task_execution(param_keys, ss_chunk, seed, method)
+            result = hypothetical_task_execution(param_keys, ss_chunk, seed, method)
+            results += result
+        results /= 10
+        plt.plot(results)
+        plt.savefig(f"{ss_chunk}.png")  
 
 
 def hypothetical_task_execution(param_keys, ss_chunk, seed, method):
@@ -156,11 +171,14 @@ def hypothetical_task_execution(param_keys, ss_chunk, seed, method):
             hyperparameters[param_key] = param_value
         print(f"running with method {method}, hyperparameter {hyperparameters}, seed {seed}")
         if method == "MC":
-            MC(hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            result = MC(hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            print("Simulation completed.")
         elif method == "QLearning":
-            QLearning(hyperparameters["alpha"], hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            result = QLearning(hyperparameters["alpha"], hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            print("Simulation completed.")
         else:
             print("wrong method input.")
+    return result
 
 if __name__ == "__main__":
     main()
