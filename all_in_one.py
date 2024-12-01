@@ -3,6 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import contextlib
 from itertools import product
+import pandas as pd
+import seaborn as sns
+
+sns.set_theme(style="darkgrid")
 
 def MC(gamma_in, decay_rate_in, seed, env):
     pi = np.random.randint(0, 4, size = env.observation_space.n)
@@ -26,8 +30,8 @@ def MC(gamma_in, decay_rate_in, seed, env):
             t += 1
             rand = np.random.rand()
             actions = np.array([0, 1, 2, 3])
-            # epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
-            epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
+            epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
+            # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
 
             if rand < 1 - epislon:
                 action = pi[state]
@@ -63,7 +67,7 @@ def QLearning(alpha_in, gamma_in, decay_rate_in, seed, env):
     max_epislon = 1
     min_epislon = 0.001
     decay_rate = decay_rate_in
-    episodes_number = 15000
+    episodes_number = 2000
     rewards_per_episode = np.zeros(episodes_number)
 
     for episodes in range(episodes_number):
@@ -128,7 +132,7 @@ def main():
     method = methods[0]
 
     param_grid_md = {
-        "gamma" : [0.2, 0.8, 1],
+        "gamma" : [0.5, 0.8, 1],
         "decay_rate" : [0.001, 0.0005]
     }
     param_grid_q = {
@@ -136,9 +140,13 @@ def main():
         "gamma" : [0.2, 0.8, 1],
         "decay_rate" : [0.001, 0.0005]
     }
+    if method == methods[0]:
+        param_grid = param_grid_md
+    else:
+        param_grid = param_grid_q
 
-    param_keys = list(param_grid_md.keys())
-    search_space = list(generate_search_space(param_grid_md).items())
+    param_keys = list(param_grid.keys())
+    search_space = list(generate_search_space(param_grid).items())
 
     print(f"I'm conducting {method} method. Search space is ")
     print("="*20)
@@ -150,18 +158,33 @@ def main():
 
     for ss_chunk in search_space_chunks:
         print(f"ss_chunk: {ss_chunk}"+"="*20)
-        results = np.zeros(15000)  # episodes number
+        results = []
+        data = []
         for seed in seeds:
             print(f"seed is {seed}")
             result = hypothetical_task_execution(param_keys, ss_chunk, seed, method)
-            results += result
-        results /= 10
-        plt.plot(results)
-        plt.savefig(f"{ss_chunk}.png")  
-
+            results.append(result)
+        
+        for seed_id, reward in enumerate(results, start=1):
+            iterations = np.arange(1, len(reward) + 1)
+            data.append(pd.DataFrame({
+                "iteration": iterations,
+                "reward": reward,
+                "seed": seed_id
+            }))
+        df = pd.concat(data, ignore_index=True)
+        sns.lineplot(data=df, x="iteration", y="reward", errorbar="ci")
+        plt.title("Average Reward with Confidence Interval (10 Seeds)")
+        plt.xlabel("Episodes")
+        plt.ylabel("Returns over past 100 episodes")
+        if method == "MC":
+            plt.savefig(f"{method}_gamma{ss_chunk[0][1][0]}_decay{ss_chunk[0][1][1]}.png")  
+        elif method == "QLearning":
+            plt.savefig(f"{method}_alpha{ss_chunk[0][1][0]}_gamma{ss_chunk[0][1][1]}_decay{ss_chunk[0][1][2]}.png")  
+            
 
 def hypothetical_task_execution(param_keys, ss_chunk, seed, method):
-    env = gym.make("FrozenLake-v1", map_name = "4x4" , is_slippery = False, render_mode=None)
+    env = gym.make("FrozenLake-v1", map_name = "4x4" , is_slippery = True, render_mode=None)
     observation, info = env.reset(seed=35)
 
     for hyperparam_id, combination in ss_chunk:

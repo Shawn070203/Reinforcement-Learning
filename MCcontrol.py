@@ -12,12 +12,12 @@ observation, info = env.reset(seed=35)
 pi = np.random.randint(0, 4, size = env.observation_space.n)
 q = np.zeros([env.observation_space.n, env.action_space.n])
 action_num = np.zeros([env.observation_space.n, env.action_space.n])
-gamma = 1
+gamma = 0.2
 max_epislon = 1
 min_epislon = 0.001
-decay_rate = 0.0001
+decay_rate = 0.001
 constant_epislon = 0.1
-episodes_number = 30000
+episodes_number = 15000
 rewards_per_episode = np.zeros(episodes_number)
 
 for episodes in range(episodes_number):
