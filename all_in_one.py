@@ -8,7 +8,8 @@ import seaborn as sns
 
 sns.set_theme(style="darkgrid")
 
-def MC(gamma_in, decay_rate_in, seed, env):
+def MC(gamma_in, decay_rate_in, seed_in, env):
+    observation, info = env.reset(seed=int(seed_in))
     pi = np.random.randint(0, 4, size = env.observation_space.n)
     q = np.zeros([env.observation_space.n, env.action_space.n])
     action_num = np.zeros([env.observation_space.n, env.action_space.n])
@@ -60,7 +61,8 @@ def MC(gamma_in, decay_rate_in, seed, env):
         sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
     return sum_rewards
 
-def QLearning(alpha_in, gamma_in, decay_rate_in, seed, env):
+def QLearning(alpha_in, gamma_in, decay_rate_in, seed_in, env):
+    observation, info = env.reset(seed=int(seed_in))
     q = np.zeros([env.observation_space.n, env.action_space.n])
     alpha = alpha_in
     gamma = gamma_in
@@ -173,6 +175,7 @@ def main():
                 "seed": seed_id
             }))
         df = pd.concat(data, ignore_index=True)
+        plt.clf()
         sns.lineplot(data=df, x="iteration", y="reward", errorbar="ci")
         plt.title("Average Reward with Confidence Interval (10 Seeds)")
         plt.xlabel("Episodes")
@@ -184,8 +187,7 @@ def main():
             
 
 def hypothetical_task_execution(param_keys, ss_chunk, seed, method):
-    env = gym.make("FrozenLake-v1", map_name = "4x4" , is_slippery = True, render_mode=None)
-    observation, info = env.reset(seed=35)
+    env = gym.make("FrozenLake-v1", map_name = "4x4" , is_slippery = False, render_mode=None)
 
     for hyperparam_id, combination in ss_chunk:
         hyperparameters = {}
