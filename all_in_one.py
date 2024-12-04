@@ -5,11 +5,13 @@ import contextlib
 from itertools import product
 import pandas as pd
 import seaborn as sns
+from gymnasium.envs.toy_text.frozen_lake import generate_random_map
+
+
 
 sns.set_theme(style="darkgrid")
 
-def MC(gamma_in, decay_rate_in, seed_in, env):
-    observation, info = env.reset(seed=int(seed_in))
+def MC(gamma_in, decay_rate_in, env):
     pi = np.random.randint(0, 4, size = env.observation_space.n)
     q = np.zeros([env.observation_space.n, env.action_space.n])
     action_num = np.zeros([env.observation_space.n, env.action_space.n])
@@ -17,7 +19,7 @@ def MC(gamma_in, decay_rate_in, seed_in, env):
     max_epislon = 1
     min_epislon = 0.001
     decay_rate = decay_rate_in
-    episodes_number = 15000
+    episodes_number = 40000
     rewards_per_episode = np.zeros(episodes_number)
 
     for episodes in range(episodes_number):
@@ -61,15 +63,15 @@ def MC(gamma_in, decay_rate_in, seed_in, env):
         sum_rewards[t] = np.sum(rewards_per_episode[max(0, t-100):(t+1)])
     return sum_rewards
 
-def QLearning(alpha_in, gamma_in, decay_rate_in, seed_in, env):
-    observation, info = env.reset(seed=int(seed_in))
+def QLearning(alpha_in, gamma_in, decay_rate_in, env):
+
     q = np.zeros([env.observation_space.n, env.action_space.n])
     alpha = alpha_in
     gamma = gamma_in
     max_epislon = 1
     min_epislon = 0.001
     decay_rate = decay_rate_in
-    episodes_number = 2000
+    episodes_number = 30000
     rewards_per_episode = np.zeros(episodes_number)
 
     for episodes in range(episodes_number):
@@ -79,8 +81,8 @@ def QLearning(alpha_in, gamma_in, decay_rate_in, seed_in, env):
         while (not terminated and not truncated):
             rand = np.random.rand()
             actions = np.array([0, 1, 2, 3])
-            epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
-            # epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
+            # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
+            epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
             if rand < 1 - epislon:
                 action = np.argmax(q[state,:])
             else:
@@ -127,20 +129,20 @@ def generate_search_space(parameter_grid,
     return search_space
 
 def main():
-    with local_seed(42):
+    with local_seed(32):
         seeds = np.random.choice(100, 10, replace=False)
 
     methods = ["MC", "QLearning"]
     method = methods[0]
 
     param_grid_md = {
-        "gamma" : [0.5, 0.8, 1],
-        "decay_rate" : [0.001, 0.0005]
+        "gamma" : [0.4, 0.7, 0.9],
+        "decay_rate" : [0.0001, 0.0003]
     }
     param_grid_q = {
-        "alpha" : [0.2, 0.5, 0.8],
-        "gamma" : [0.2, 0.8, 1],
-        "decay_rate" : [0.001, 0.0005]
+        "alpha" : [0.5, 0.9],
+        "gamma" : [0.6, 0.9],
+        "decay_rate" : [0.0001, 0.0005]
     }
     if method == methods[0]:
         param_grid = param_grid_md
@@ -175,31 +177,35 @@ def main():
                 "seed": seed_id
             }))
         df = pd.concat(data, ignore_index=True)
+        interval = 10
+        df_sampled = df[df["iteration"] % interval == 0] # down sampling...
+
         plt.clf()
-        sns.lineplot(data=df, x="iteration", y="reward", errorbar="ci")
+        sns.lineplot(data=df_sampled, x="iteration", y="reward", errorbar="ci")
         plt.title("Average Reward with Confidence Interval (10 Seeds)")
         plt.xlabel("Episodes")
         plt.ylabel("Returns over past 100 episodes")
         if method == "MC":
-            plt.savefig(f"{method}_gamma{ss_chunk[0][1][0]}_decay{ss_chunk[0][1][1]}.png")  
+            plt.savefig(f"{method}_gamma{ss_chunk[0][1][0]}_decay{ss_chunk[0][1][1]}_all.png")  
         elif method == "QLearning":
             plt.savefig(f"{method}_alpha{ss_chunk[0][1][0]}_gamma{ss_chunk[0][1][1]}_decay{ss_chunk[0][1][2]}.png")  
             
 
-def hypothetical_task_execution(param_keys, ss_chunk, seed, method):
-    env = gym.make("FrozenLake-v1", map_name = "4x4" , is_slippery = False, render_mode=None)
+def hypothetical_task_execution(param_keys, ss_chunk, seed_in, method):
+    # env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode=None)
+    env = gym.make("FrozenLake-v1", desc=generate_random_map(size=8, seed=int(seed_in)), is_slippery = True, render_mode=None)
 
     for hyperparam_id, combination in ss_chunk:
         hyperparameters = {}
         for idx, param_value in enumerate(combination):
             param_key = param_keys[idx]
             hyperparameters[param_key] = param_value
-        print(f"running with method {method}, hyperparameter {hyperparameters}, seed {seed}")
+        print(f"running with method {method}, hyperparameter {hyperparameters}, seed {seed_in}")
         if method == "MC":
-            result = MC(hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            result = MC(hyperparameters["gamma"], hyperparameters["decay_rate"], env)
             print("Simulation completed.")
         elif method == "QLearning":
-            result = QLearning(hyperparameters["alpha"], hyperparameters["gamma"], hyperparameters["decay_rate"], seed, env)
+            result = QLearning(hyperparameters["alpha"], hyperparameters["gamma"], hyperparameters["decay_rate"], env)
             print("Simulation completed.")
         else:
             print("wrong method input.")

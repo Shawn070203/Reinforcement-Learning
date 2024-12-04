@@ -10,9 +10,9 @@ env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_m
 observation, info = env.reset(seed=35)
 
 pi = np.random.randint(0, 4, size = env.observation_space.n)
-q = np.zeros([env.observation_space.n, env.action_space.n])
+q = np.random.rand(env.observation_space.n, env.action_space.n)
 action_num = np.zeros([env.observation_space.n, env.action_space.n])
-gamma = 0.2
+gamma = 1
 max_epislon = 1
 min_epislon = 0.001
 decay_rate = 0.001
@@ -34,8 +34,8 @@ for episodes in range(episodes_number):
         rand = np.random.rand()
         actions = np.array([0, 1, 2, 3])
         epislon = constant_epislon
-        epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
-        # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
+        # epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
+        epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
 
         if rand < 1 - epislon:
             action = pi[state]
@@ -76,18 +76,18 @@ plt.savefig('frozen_lake8x8.png')
 print('over')
 print(pi)
 
-# env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode="human")
-# observation, info = env.reset(seed=35)
-# while True:
-#     state = 0
-#     terminated = False
-#     truncated = False
-#     while (not terminated and not truncated):
-#         action = pi[state]
-#         new_state, reward, terminated, truncated, info = env.step(action)
-#         state = new_state
-#     if terminated or truncated:
-#         observation, info = env.reset()
+env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode="human")
+observation, info = env.reset(seed=35)
+while True:
+    state = 0
+    terminated = False
+    truncated = False
+    while (not terminated and not truncated):
+        action = pi[state]
+        new_state, reward, terminated, truncated, info = env.step(action)
+        state = new_state
+    if terminated or truncated:
+        observation, info = env.reset()
 
 
 env.close()
