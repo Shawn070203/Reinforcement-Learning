@@ -19,7 +19,7 @@ def MC(gamma_in, decay_rate_in, env):
     max_epislon = 1
     min_epislon = 0.001
     decay_rate = decay_rate_in
-    episodes_number = 40000
+    episodes_number = 30000
     rewards_per_episode = np.zeros(episodes_number)
 
     for episodes in range(episodes_number):
@@ -33,8 +33,8 @@ def MC(gamma_in, decay_rate_in, env):
             t += 1
             rand = np.random.rand()
             actions = np.array([0, 1, 2, 3])
-            epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
-            # epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
+            # epislon = min_epislon + (max_epislon - min_epislon)*np.exp(-decay_rate*episodes)
+            epislon = max(min_epislon + (max_epislon - min_epislon)*(1-decay_rate*episodes), min_epislon)
 
             if rand < 1 - epislon:
                 action = pi[state]
@@ -186,14 +186,14 @@ def main():
         plt.xlabel("Episodes")
         plt.ylabel("Returns over past 100 episodes")
         if method == "MC":
-            plt.savefig(f"{method}_gamma{ss_chunk[0][1][0]}_decay{ss_chunk[0][1][1]}_all.png")  
+            plt.savefig(f"{method}_gamma{ss_chunk[0][1][0]}_decay{ss_chunk[0][1][1]}.png")  
         elif method == "QLearning":
             plt.savefig(f"{method}_alpha{ss_chunk[0][1][0]}_gamma{ss_chunk[0][1][1]}_decay{ss_chunk[0][1][2]}.png")  
             
 
 def hypothetical_task_execution(param_keys, ss_chunk, seed_in, method):
     # env = gym.make("FrozenLake-v1", map_name = "8x8" , is_slippery = False, render_mode=None)
-    env = gym.make("FrozenLake-v1", desc=generate_random_map(size=8, seed=int(seed_in)), is_slippery = True, render_mode=None)
+    env = gym.make("FrozenLake-v1", desc=generate_random_map(size=8, seed=int(seed_in)), is_slippery = False, render_mode=None)
 
     for hyperparam_id, combination in ss_chunk:
         hyperparameters = {}

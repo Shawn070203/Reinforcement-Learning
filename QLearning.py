@@ -10,7 +10,7 @@ env = gym.make("FrozenLake-v1", desc=generate_random_map(size=8, seed=142), is_s
 # Reset the environment to generate the first observation
 # observation, info = env.reset(seed=46)
 q = np.zeros([env.observation_space.n, env.action_space.n])
-alpha = 0.9
+alpha = 1
 gamma = 0.9
 
 max_epislon = 1
